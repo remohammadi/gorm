@@ -361,7 +361,7 @@ func (scope *Scope) Exec() *Scope {
 	defer scope.trace(NowFunc())
 
 	if !scope.HasError() {
-		if result, err := scope.SQLDB().Exec(scope.SQL, scope.SQLVars...); scope.Err(err) == nil {
+		if result, err := scope.sqldbExec(scope.SQL, scope.SQLVars...); scope.Err(err) == nil {
 			if count, err := result.RowsAffected(); scope.Err(err) == nil {
 				scope.db.RowsAffected = count
 			}
@@ -397,17 +397,6 @@ func (scope *Scope) InstanceSet(name string, value interface{}) *Scope {
 // InstanceGet get instance setting from current operation
 func (scope *Scope) InstanceGet(name string) (interface{}, bool) {
 	return scope.Get(name + scope.InstanceID())
-}
-
-// Begin start a transaction
-func (scope *Scope) Begin() *Scope {
-	if db, ok := scope.SQLDB().(sqlDb); ok {
-		if tx, err := db.Begin(); err == nil {
-			scope.db.db = interface{}(tx).(SQLCommon)
-			scope.InstanceSet("gorm:started_transaction", true)
-		}
-	}
-	return scope
 }
 
 // CommitOrRollback commit current transaction if no error happened, otherwise will rollback it
@@ -1101,6 +1090,7 @@ func (scope *Scope) getTableOptions() string {
 	return " " + tableOptions.(string)
 }
 
+// TODO: context variant
 func (scope *Scope) createJoinTable(field *StructField) {
 	if relationship := field.Relationship; relationship != nil && relationship.JoinTableHandler != nil {
 		joinTableHandler := relationship.JoinTableHandler
@@ -1137,6 +1127,7 @@ func (scope *Scope) createJoinTable(field *StructField) {
 	}
 }
 
+// TODO: context variant
 func (scope *Scope) createTable() *Scope {
 	var tags []string
 	var primaryKeys []string
@@ -1172,19 +1163,23 @@ func (scope *Scope) createTable() *Scope {
 	return scope
 }
 
+// TODO: context variant
 func (scope *Scope) dropTable() *Scope {
 	scope.Raw(fmt.Sprintf("DROP TABLE %v%s", scope.QuotedTableName(), scope.getTableOptions())).Exec()
 	return scope
 }
 
+// TODO: context variant
 func (scope *Scope) modifyColumn(column string, typ string) {
 	scope.db.AddError(scope.Dialect().ModifyColumn(scope.QuotedTableName(), scope.Quote(column), typ))
 }
 
+// TODO: context variant
 func (scope *Scope) dropColumn(column string) {
 	scope.Raw(fmt.Sprintf("ALTER TABLE %v DROP COLUMN %v", scope.QuotedTableName(), scope.Quote(column))).Exec()
 }
 
+// TODO: context variant
 func (scope *Scope) addIndex(unique bool, indexName string, column ...string) {
 	if scope.Dialect().HasIndex(scope.TableName(), indexName) {
 		return
@@ -1203,6 +1198,7 @@ func (scope *Scope) addIndex(unique bool, indexName string, column ...string) {
 	scope.Raw(fmt.Sprintf("%s %v ON %v(%v) %v", sqlCreate, indexName, scope.QuotedTableName(), strings.Join(columns, ", "), scope.whereSQL())).Exec()
 }
 
+// TODO: context variant
 func (scope *Scope) addForeignKey(field string, dest string, onDelete string, onUpdate string) {
 	// Compatible with old generated key
 	keyName := scope.Dialect().BuildKeyName(scope.TableName(), field, dest, "foreign")
@@ -1214,6 +1210,7 @@ func (scope *Scope) addForeignKey(field string, dest string, onDelete string, on
 	scope.Raw(fmt.Sprintf(query, scope.QuotedTableName(), scope.quoteIfPossible(keyName), scope.quoteIfPossible(field), dest, onDelete, onUpdate)).Exec()
 }
 
+// TODO: context variant
 func (scope *Scope) removeForeignKey(field string, dest string) {
 	keyName := scope.Dialect().BuildKeyName(scope.TableName(), field, dest)
 
@@ -1224,10 +1221,12 @@ func (scope *Scope) removeForeignKey(field string, dest string) {
 	scope.Raw(fmt.Sprintf(query, scope.QuotedTableName(), scope.quoteIfPossible(keyName))).Exec()
 }
 
+// TODO: context variant
 func (scope *Scope) removeIndex(indexName string) {
 	scope.Dialect().RemoveIndex(scope.TableName(), indexName)
 }
 
+// TODO: context variant
 func (scope *Scope) autoMigrate() *Scope {
 	tableName := scope.TableName()
 	quotedTableName := scope.QuotedTableName()
@@ -1249,6 +1248,7 @@ func (scope *Scope) autoMigrate() *Scope {
 	return scope
 }
 
+// TODO: context variant
 func (scope *Scope) autoIndex() *Scope {
 	var indexes = map[string][]string{}
 	var uniqueIndexes = map[string][]string{}
