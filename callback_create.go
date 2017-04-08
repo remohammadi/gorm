@@ -125,7 +125,7 @@ func createCallback(scope *Scope) {
 
 		// execute create sql
 		if lastInsertIDReturningSuffix == "" || primaryField == nil {
-			if result, err := scope.SQLDB().Exec(scope.SQL, scope.SQLVars...); scope.Err(err) == nil {
+			if result, err := scope.sqldbExec(scope.SQL, scope.SQLVars...); scope.Err(err) == nil {
 				// set rows affected count
 				scope.db.RowsAffected, _ = result.RowsAffected()
 
@@ -138,7 +138,7 @@ func createCallback(scope *Scope) {
 			}
 		} else {
 			if primaryField.Field.CanAddr() {
-				if err := scope.SQLDB().QueryRow(scope.SQL, scope.SQLVars...).Scan(primaryField.Field.Addr().Interface()); scope.Err(err) == nil {
+				if err := scope.sqldbQueryRow(scope.SQL, scope.SQLVars...).Scan(primaryField.Field.Addr().Interface()); scope.Err(err) == nil {
 					primaryField.IsBlank = false
 					scope.db.RowsAffected = 1
 				}
