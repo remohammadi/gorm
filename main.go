@@ -8,6 +8,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	// Using the old package to support older golangs
+	"golang.org/x/net/context"
 )
 
 // DB contains information for current db connection
@@ -24,6 +27,7 @@ type DB struct {
 	logger            logger
 	search            *search
 	values            sync.Map
+	context           context.Context
 
 	// global db
 	parent        *DB
@@ -504,19 +508,19 @@ func (s *DB) Debug() *DB {
 }
 
 // Begin begin a transaction
-func (s *DB) Begin() *DB {
-	c := s.clone()
-	if db, ok := c.db.(sqlDb); ok && db != nil {
-		tx, err := db.Begin()
-		c.db = interface{}(tx).(SQLCommon)
-
-		c.dialect.SetDB(c.db)
-		c.AddError(err)
-	} else {
-		c.AddError(ErrCantStartTransaction)
-	}
-	return c
-}
+//func (s *DB) Begin() *DB {
+//	c := s.clone()
+//	if db, ok := c.db.(sqlDb); ok && db != nil {
+//		tx, err := db.Begin()
+//		c.db = interface{}(tx).(SQLCommon)
+//
+//		c.dialect.SetDB(c.db)
+//		c.AddError(err)
+//	} else {
+//		c.AddError(ErrCantStartTransaction)
+//	}
+//	return c
+//}
 
 // Commit commit a transaction
 func (s *DB) Commit() *DB {
@@ -771,6 +775,8 @@ func (s *DB) clone() *DB {
 		parent:            s.parent,
 		logger:            s.logger,
 		logMode:           s.logMode,
+		values:            sync.Map{},
+		context:           s.context,
 		Value:             s.Value,
 		Error:             s.Error,
 		blockGlobalUpdate: s.blockGlobalUpdate,
